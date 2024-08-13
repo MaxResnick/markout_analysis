@@ -7,13 +7,31 @@ import os
 import sys
 from dotenv import load_dotenv
 import gzip
+import logging
+from typing import Optional
 
 load_dotenv()
 
-def get_data_from_tardis(timestamp, symbol):
-        tardis_api_key = os.getenv("TARDIS_API_KEY")
+class Markouts:
+    def __init__(self):
+        """
+        Initialize the Markouts object.
+        """
+        self.tardis_api_key = os.getenv("TARDIS_API_KEY")
+        self.logger = logging.getLogger(__name__)
         nest_asyncio.apply()
 
+    def get_data_from_tardis(self, timestamp: int, symbol: str) -> Optional[str]:
+        """
+        Retrieve data from Tardis API.
+
+        Args:
+            timestamp (int): Unix timestamp
+            symbol (str): Trading symbol
+
+        Returns:
+            Optional[str]: Path to the downloaded data file, or "NA" if an error occurred
+        """
         timestamp_dt = datetime.fromtimestamp(int(timestamp))
 
         # Convert datetime to date string
@@ -23,37 +41,62 @@ def get_data_from_tardis(timestamp, symbol):
         # Construct the file name and paths
         file_name = f'binance_book_snapshot_5_{date_start}_{symbol}.csv'
         input_path = os.path.join('datasets', f'{file_name}.gz')
-        output_path = os.path.join('..', 'data', file_name) #Might want to organize by pair? Not sure
+        output_path = os.path.join('..', 'data', file_name)
         
         # Check if the path exists
         if os.path.exists(output_path):
+            self.logger.info(f"File already exists: {output_path}")
             return output_path
         
         # Start the data download
         try:
             datasets.download(
-                    exchange="binance",
-                    data_types=["book_snapshot_5"],
-                    from_date=date_start,
-                    to_date=date_end,
-                    symbols=[symbol],
-                    api_key=tardis_api_key,
-                )
-        except:
-            print(f"Error thrown when trying to pull the pair: {symbol}")
-            return("NA")
+                exchange="binance",
+                data_types=["book_snapshot_5"],
+                from_date=date_start,
+                to_date=date_end,
+                symbols=[symbol],
+                api_key=self.tardis_api_key,
+            )
+        except Exception as e:
+            self.logger.error(f"Error when trying to pull the pair: {symbol}. Error: {str(e)}")
+            return "NA"
                 
         # Decompress the gz file
-        with gzip.open(input_path, 'rb') as f_in:
-            with open(output_path, 'wb') as f_out:
-                shutil.copyfileobj(f_in, f_out)
+        try:
+            with gzip.open(input_path, 'rb') as f_in:
+                with open(output_path, 'wb') as f_out:
+                    shutil.copyfileobj(f_in, f_out)
+        except Exception as e:
+            self.logger.error(f"Error decompressing file: {str(e)}")
+            return "NA"
 
         # Delete the datasets directory and its contents
-        shutil.rmtree('datasets')
+        try:
+            shutil.rmtree('datasets')
+        except Exception as e:
+            self.logger.warning(f"Error deleting datasets directory: {str(e)}")
         
+        self.logger.info(f"Successfully downloaded and processed data: {output_path}")
         return output_path
 
+    # You can add more methods here as needed, for example:
+    # def process_data(self, data_path: str) -> pd.DataFrame:
+    #     """
+    #     Process the downloaded data.
+    #     
+    #     Args:
+    #         data_path (str): Path to the data file
+    #     
+    #     Returns:
+    #         pd.DataFrame: Processed data as a pandas DataFrame
+    #     """
+    #     # Implementation here
+    #     pass
 
-
-
-get_data_from_tardis("1723483005", "ETHUSDC")
+# Example usage
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    markouts = Markouts()
+    result = markouts.get_data_from_tardis(1723483005, "ETHUSDC")
+    print(result)
