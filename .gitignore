@@ -2,4 +2,4 @@
 .env
 
 # Ignore binance_data folder
-data/binance_data/
+data/binance_data/.DS_Store
