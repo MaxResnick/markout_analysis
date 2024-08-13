@@ -80,7 +80,6 @@ class Markouts:
         self.logger.info(f"Successfully downloaded and processed data: {output_path}")
         return output_path
 
-    # You can add more methods here as needed, for example:
     # def process_data(self, data_path: str) -> pd.DataFrame:
     #     """
     #     Process the downloaded data.
@@ -94,7 +93,6 @@ class Markouts:
     #     # Implementation here
     #     pass
 
-# Example usage
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     markouts = Markouts()
