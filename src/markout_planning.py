@@ -1,4 +1,4 @@
-
+import pandas as pd
 
 class Markout_model:
     def __init__(self, df, markout_distance_array):
@@ -8,6 +8,7 @@ class Markout_model:
         self.fair_value_model = fair_value_model # fair value model
 
     def calculate_markout(df,self):
+        return df #placeholder
         # takes as input a dataframe with token in token out timestamp and amount in amount out
         # returns a dataframe with those fields and markout in bps for each markout distance in markout_distance_array
 
