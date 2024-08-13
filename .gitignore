@@ -1,0 +1,5 @@
+# Ignore .env file
+.env
+
+# Ignore binance_data folder
+../data/binance_data/
