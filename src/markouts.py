@@ -8,18 +8,54 @@ import sys
 from dotenv import load_dotenv
 import gzip
 import logging
-from typing import Optional
+import json
+import logging
+from typing import List, Optional
 
 load_dotenv()
 
 class Markouts:
-    def __init__(self):
+    def __init__(self, markout_distance_array: List[int]):
         """
         Initialize the Markouts object.
+
+        Args:
+            markout_distance_array (List[int]): List of markout distances in seconds
         """
         self.tardis_api_key = os.getenv("TARDIS_API_KEY")
         self.logger = logging.getLogger(__name__)
-        nest_asyncio.apply()
+        self.markout_distance_array = markout_distance_array
+        self.available_symbols = self._load_available_symbols()
+
+    def _load_available_symbols(self) -> List[str]:
+        """
+        Load the list of available symbols from the JSON file.
+
+        Returns:
+            List[str]: List of available symbols
+        """
+        file_path = os.path.join("..", "data", "available_tardis_pairs_list.json")
+        try:
+            with open(file_path, 'r') as file:
+                return json.load(file)
+        except FileNotFoundError:
+            self.logger.error(f"Symbol list file not found: {file_path}")
+            return []
+        except json.JSONDecodeError:
+            self.logger.error(f"Error decoding JSON from file: {file_path}")
+            return []
+
+    def is_valid_symbol(self, symbol: str) -> bool:
+        """
+        Check if the given symbol is in the list of available symbols.
+
+        Args:
+            symbol (str): The symbol to check
+
+        Returns:
+            bool: True if the symbol is valid, False otherwise
+        """
+        return symbol.upper() in self.available_symbols
 
     def get_data_from_tardis(self, timestamp: int, symbol: str) -> Optional[str]:
         """
@@ -80,7 +116,6 @@ class Markouts:
         self.logger.info(f"Successfully downloaded and processed data: {output_path}")
         return output_path
 
-    # You can add more methods here as needed, for example:
     # def process_data(self, data_path: str) -> pd.DataFrame:
     #     """
     #     Process the downloaded data.
